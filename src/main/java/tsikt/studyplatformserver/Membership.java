@@ -6,7 +6,7 @@ public class Membership {
     private Long userId;
     private Long groupId;
     private String role;
-    private String joinedAt; // zatiaľ ako String (SQLite TEXT)
+    private String joinedAt;
 
     public Membership() {
     }

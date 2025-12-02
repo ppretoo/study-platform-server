@@ -29,3 +29,15 @@ CREATE TABLE IF NOT EXISTS tasks (
                                      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                                      FOREIGN KEY (group_id) REFERENCES study_groups(id)
 );
+
+CREATE TABLE IF NOT EXISTS resources (
+                                         id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                                         group_id    INTEGER NOT NULL,
+                                         name        TEXT NOT NULL,      -- názov materiálu
+                                         type        TEXT,               -- napr. LINK, NOTE, FILE...
+                                         url         TEXT NOT NULL,      -- link alebo cesta k súboru
+                                         uploaded_by INTEGER,            -- id používateľa (môže zostať NULL)
+                                         uploaded_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                                         FOREIGN KEY (group_id) REFERENCES study_groups(id),
+                                         FOREIGN KEY (uploaded_by) REFERENCES users(id)
+);

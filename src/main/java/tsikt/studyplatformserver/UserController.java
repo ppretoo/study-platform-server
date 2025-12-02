@@ -1,7 +1,7 @@
 package tsikt.studyplatformserver;
 
 import org.springframework.web.bind.annotation.*;
-
+import tsikt.studyplatformserver.ActivityLogRepository;
 import java.util.List;
 
 @RestController
@@ -10,9 +10,11 @@ import java.util.List;
 public class UserController {
 
     private final UserRepository repo;
+    private final ActivityLogRepository activityRepo;
 
-    public UserController(UserRepository repo) {
+    public UserController(UserRepository repo, ActivityLogRepository activityRepo) {
         this.repo = repo;
+        this.activityRepo = activityRepo;
     }
 
     @GetMapping
@@ -23,5 +25,6 @@ public class UserController {
     @PostMapping
     public void createUser(@RequestBody User user) {
         repo.save(user);
+        activityRepo.log(null, null, "USER_CREATED", "User: " + user.getEmail());
     }
 }

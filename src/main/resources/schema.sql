@@ -24,8 +24,8 @@ CREATE TABLE IF NOT EXISTS tasks (
                                      group_id   INTEGER NOT NULL,
                                      title      TEXT NOT NULL,
                                      description TEXT,
-                                     status     TEXT NOT NULL DEFAULT 'TODO',   -- napr. TODO / IN_PROGRESS / DONE
-                                     deadline   TEXT,                           -- dátum ako string, nech je to jednoduché
+                                     status     TEXT NOT NULL DEFAULT 'TODO',
+                                     deadline   TEXT,
                                      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                                      FOREIGN KEY (group_id) REFERENCES study_groups(id)
 );
@@ -33,11 +33,21 @@ CREATE TABLE IF NOT EXISTS tasks (
 CREATE TABLE IF NOT EXISTS resources (
                                          id          INTEGER PRIMARY KEY AUTOINCREMENT,
                                          group_id    INTEGER NOT NULL,
-                                         name        TEXT NOT NULL,      -- názov materiálu
-                                         type        TEXT,               -- napr. LINK, NOTE, FILE...
-                                         url         TEXT NOT NULL,      -- link alebo cesta k súboru
-                                         uploaded_by INTEGER,            -- id používateľa (môže zostať NULL)
+                                         name        TEXT NOT NULL,
+                                         type        TEXT,
+                                         url         TEXT NOT NULL,
+                                         uploaded_by INTEGER,
                                          uploaded_at TEXT DEFAULT CURRENT_TIMESTAMP,
                                          FOREIGN KEY (group_id) REFERENCES study_groups(id),
                                          FOREIGN KEY (uploaded_by) REFERENCES users(id)
+);
+CREATE TABLE IF NOT EXISTS activity_log (
+                                            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                                            user_id    INTEGER,
+                                            group_id   INTEGER,
+                                            action     TEXT NOT NULL,
+                                            details    TEXT,
+                                            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                                            FOREIGN KEY (user_id) REFERENCES users(id),
+                                            FOREIGN KEY (group_id) REFERENCES study_groups(id)
 );

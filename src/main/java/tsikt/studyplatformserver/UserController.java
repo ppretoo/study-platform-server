@@ -6,7 +6,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin // aby sa k tomu neskôr vedel pripojiť JavaFX klient
+@CrossOrigin
 public class UserController {
 
     private final UserRepository repo;

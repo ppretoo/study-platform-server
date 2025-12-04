@@ -1,5 +1,5 @@
 package tsikt.studyplatformserver;
-
+//test
 public class ActivityLog {
 
     private Long id;

@@ -21,6 +21,7 @@ public class MainApp extends Application {
 
     private final ListView<Group> groupListView = new ListView<>();
     private final TextArea detailArea = new TextArea();
+    private Group selectedGroup;
 
     @Override
     public void start(Stage stage) {
@@ -29,14 +30,27 @@ public class MainApp extends Application {
         Button loadGroupsBtn = new Button("Načítaj skupiny");
         loadGroupsBtn.setOnAction(e -> loadGroups());
 
-        HBox topBar = new HBox(10, loadGroupsBtn);
+        TextField newTaskTitle = new TextField();
+        newTaskTitle.setPromptText("Názov úlohy");
+
+        TextField newTaskDeadline = new TextField();
+        newTaskDeadline.setPromptText("Deadline (napr. 2025-12-31)");
+
+        Button addTaskBtn = new Button("Pridaj úlohu");
+        addTaskBtn.setOnAction(e -> addTask(newTaskTitle.getText(), newTaskDeadline.getText()));
+
+        HBox topBar = new HBox(10, loadGroupsBtn, newTaskTitle, newTaskDeadline, addTaskBtn);
         topBar.setPadding(new Insets(10));
 
         detailArea.setEditable(false);
         detailArea.setWrapText(true);
 
         groupListView.getSelectionModel().selectedItemProperty()
-                .addListener((obs, oldVal, newVal) -> showGroupDetail(newVal));
+                .addListener((obs, oldVal, newVal) -> {
+                    selectedGroup = newVal;
+                    showGroupDetail(newVal);
+                });
+
 
         BorderPane root = new BorderPane();
         root.setTop(topBar);
@@ -112,4 +126,33 @@ public class MainApp extends Application {
     public static void main(String[] args) {
         launch(args);
     }
+
+    private void addTask(String title, String deadline) {
+        if (selectedGroup == null) {
+            showError("Najprv vyber skupinu.");
+            return;
+        }
+        if (title == null || title.isBlank()) {
+            showError("Zadaj názov úlohy.");
+            return;
+        }
+
+        try {
+            String json = "{"
+                    + "\"groupId\":" + selectedGroup.getId() + ","
+                    + "\"title\":\"" + title.replace("\"", "\\\"") + "\","
+                    + "\"description\":\"\","
+                    + "\"deadline\":\"" + deadline + "\""
+                    + "}";
+
+            backendClient.post("/api/tasks", json);
+
+            // po vytvorení úlohy znova načítaj detail skupiny (aj s úlohami)
+            showGroupDetail(selectedGroup);
+
+        } catch (IOException | InterruptedException ex) {
+            showError("Chyba pri pridávaní úlohy: " + ex.getMessage());
+        }
+    }
+
 }

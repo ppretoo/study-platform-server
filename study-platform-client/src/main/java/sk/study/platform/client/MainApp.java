@@ -30,6 +30,16 @@ public class MainApp extends Application {
         Button loadGroupsBtn = new Button("Načítaj skupiny");
         loadGroupsBtn.setOnAction(e -> loadGroups());
 
+        TextField newResName = new TextField();
+        newResName.setPromptText("Názov materiálu");
+
+        TextField newResUrl = new TextField();
+        newResUrl.setPromptText("URL materiálu");
+
+        Button addResBtn = new Button("Pridaj materiál");
+        addResBtn.setOnAction(e -> addResource(newResName.getText(), newResUrl.getText()));
+
+
         TextField newTaskTitle = new TextField();
         newTaskTitle.setPromptText("Názov úlohy");
 
@@ -39,7 +49,7 @@ public class MainApp extends Application {
         Button addTaskBtn = new Button("Pridaj úlohu");
         addTaskBtn.setOnAction(e -> addTask(newTaskTitle.getText(), newTaskDeadline.getText()));
 
-        HBox topBar = new HBox(10, loadGroupsBtn, newTaskTitle, newTaskDeadline, addTaskBtn);
+        HBox topBar = new HBox(10, loadGroupsBtn, newResName, newResUrl, addResBtn);
         topBar.setPadding(new Insets(10));
 
         detailArea.setEditable(false);
@@ -91,13 +101,12 @@ public class MainApp extends Application {
         sb.append("Názov: ").append(group.getName()).append("\n");
         sb.append("Popis: ").append(group.getDescription()).append("\n");
 
-        // načítame úlohy pre danú skupinu
+        // ÚLOHY
         try {
-            String json = backendClient.get("/api/tasks/by-group/" + group.getId());
-
-            java.lang.reflect.Type listType =
+            String jsonTasks = backendClient.get("/api/tasks/by-group/" + group.getId());
+            java.lang.reflect.Type taskListType =
                     new com.google.gson.reflect.TypeToken<java.util.List<Task>>() {}.getType();
-            java.util.List<Task> tasks = gson.fromJson(json, listType);
+            java.util.List<Task> tasks = gson.fromJson(jsonTasks, taskListType);
 
             sb.append("\nÚlohy:\n");
             if (tasks.isEmpty()) {
@@ -112,12 +121,32 @@ public class MainApp extends Application {
                     sb.append("\n");
                 }
             }
-        } catch (IOException | InterruptedException ex) {
-            sb.append("\n\nChyba pri načítaní úloh: ").append(ex.getMessage());
+        } catch (Exception ex) {
+            sb.append("\nChyba pri načítaní úloh: ").append(ex.getMessage()).append("\n");
+        }
+
+        // MATERIÁLY
+        try {
+            String jsonRes = backendClient.get("/api/resources/by-group/" + group.getId());
+            java.lang.reflect.Type resListType =
+                    new com.google.gson.reflect.TypeToken<java.util.List<Resource>>() {}.getType();
+            java.util.List<Resource> resources = gson.fromJson(jsonRes, resListType);
+
+            sb.append("\nMateriály:\n");
+            if (resources.isEmpty()) {
+                sb.append("  - žiadne materiály\n");
+            } else {
+                for (Resource r : resources) {
+                    sb.append("  - ").append(r.toString()).append("\n");
+                }
+            }
+        } catch (Exception ex) {
+            sb.append("\nChyba pri načítaní materiálov: ").append(ex.getMessage()).append("\n");
         }
 
         detailArea.setText(sb.toString());
     }
+
 
     private void showError(String msg) {
         detailArea.setText(msg);
@@ -152,6 +181,40 @@ public class MainApp extends Application {
 
         } catch (IOException | InterruptedException ex) {
             showError("Chyba pri pridávaní úlohy: " + ex.getMessage());
+        }
+    }
+
+    private void addResource(String name, String url) {
+        if (selectedGroup == null) {
+            showError("Najprv vyber skupinu.");
+            return;
+        }
+        if (name == null || name.isBlank()) {
+            showError("Zadaj názov materiálu.");
+            return;
+        }
+        if (url == null || url.isBlank()) {
+            showError("Zadaj URL materiálu.");
+            return;
+        }
+
+        try {
+            // jednoduchý JSON string – typ dáme LINK a uploadedBy necháme null
+            String json = "{"
+                    + "\"groupId\":" + selectedGroup.getId() + ","
+                    + "\"name\":\"" + name.replace("\"", "\\\"") + "\","
+                    + "\"type\":\"LINK\","
+                    + "\"url\":\"" + url.replace("\"", "\\\"") + "\","
+                    + "\"uploadedBy\":null"
+                    + "}";
+
+            backendClient.post("/api/resources", json);
+
+            // po pridaní znova načítaj detail skupiny (aby sa zobrazil nový resource)
+            showGroupDetail(selectedGroup);
+
+        } catch (Exception ex) {
+            showError("Chyba pri pridávaní materiálu: " + ex.getMessage());
         }
     }
 

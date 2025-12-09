@@ -9,7 +9,6 @@ import java.net.http.HttpResponse;
 public class BackendClient {
 
     private static final String BASE_URL = "http://localhost:8080";
-
     private final HttpClient client = HttpClient.newHttpClient();
 
     public String get(String path) throws IOException, InterruptedException {
@@ -50,4 +49,14 @@ public class BackendClient {
         return response.body();
     }
 
+    public String put(String path, String jsonBody) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + path))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        return response.body();
+    }
 }

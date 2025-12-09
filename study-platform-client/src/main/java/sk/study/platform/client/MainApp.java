@@ -29,6 +29,9 @@ public class MainApp extends Application {
     private Label currentUserLabel = new Label("Neprihlásený");
 
     private HBox controlsBar;
+    private String currentUserEmail = null;
+    private Button updateProfileBtn;   //start()
+
 
 
     @Override
@@ -50,6 +53,12 @@ public class MainApp extends Application {
 
         Button registerBtn = new Button("Registrovať");
         registerBtn.setOnAction(e -> doRegister(nameField.getText(), emailField.getText(), passwordField.getText()));
+
+        //zmena detailov profilu
+        updateProfileBtn = new Button("Ulož profil");
+        updateProfileBtn.setDisable(true); // pred prihlásením zakázané
+        updateProfileBtn.setOnAction(e -> updateProfile(nameField.getText(), emailField.getText()));
+
 
         //UI for else
         Button loadGroupsBtn = new Button("Načítaj skupiny");
@@ -93,7 +102,9 @@ public class MainApp extends Application {
         HBox authBar = new HBox(
                 10,
                 nameField, emailField, passwordField,
-                registerBtn, loginBtn, currentUserLabel
+                registerBtn, loginBtn,
+                updateProfileBtn,
+                currentUserLabel
         );
         authBar.setPadding(new Insets(10));
 
@@ -383,7 +394,9 @@ public class MainApp extends Application {
 
             currentUserId = loginResponse.getUserId();
             currentUserName = loginResponse.getName();
-            currentUserLabel.setText("Prihlásený: " + currentUserName + " (" + loginResponse.getEmail() + ")");
+            currentUserEmail = loginResponse.getEmail();
+            currentUserLabel.setText("Prihlásený: " + currentUserName + " (" + currentUserEmail + ")");
+            updateProfileBtn.setDisable(false);
             controlsBar.setDisable(false);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -424,7 +437,9 @@ public class MainApp extends Application {
 
             currentUserId = user.getId();
             currentUserName = user.getName();
-            currentUserLabel.setText("Prihlásený (nový účet): " + currentUserName + " (" + user.getEmail() + ")");
+            currentUserEmail = user.getEmail();
+            currentUserLabel.setText("Prihlásený (nový účet): " + currentUserName + " (" + currentUserEmail + ")");
+            updateProfileBtn.setDisable(false);
             controlsBar.setDisable(false);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -432,4 +447,34 @@ public class MainApp extends Application {
         }
     }
 
+    private void updateProfile(String newName, String newEmail) {
+        if (currentUserId == null) {
+            showError("Najprv sa prihlás.");
+            return;
+        }
+
+        if (newName == null || newName.isBlank()
+                || newEmail == null || newEmail.isBlank()) {
+            showError("Meno aj email musia byť vyplnené.");
+            return;
+        }
+
+        try {
+            String json = "{"
+                    + "\"name\":\"" + newName.replace("\"", "\\\"") + "\","
+                    + "\"email\":\"" + newEmail.replace("\"", "\\\"") + "\""
+                    + "}";
+
+            String response = backendClient.put("/api/users/" + currentUserId, json);
+
+            // očakávame User.java objekt ako JSON
+            User updated = gson.fromJson(response, User.class);
+
+            currentUserLabel.setText("Prihlásený: " + currentUserName + " (" + currentUserEmail + ")");
+
+            showError("Profil bol úspešne aktualizovaný.");
+        } catch (Exception ex) {
+            showError("Chyba pri aktualizácii profilu: " + ex.getMessage());
+        }
+    }
 }

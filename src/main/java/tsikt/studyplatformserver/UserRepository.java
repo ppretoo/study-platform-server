@@ -30,6 +30,23 @@ public class UserRepository {
         );
     }
 
+    public User findById(Long id) {
+        return jdbc.queryForObject(
+                "SELECT id, name, email FROM users WHERE id = ?",
+                userRowMapper,
+                id
+        );
+    }
+
+    public void updateProfile(Long id, String name, String email) {
+        jdbc.update(
+                "UPDATE users SET name = ?, email = ? WHERE id = ?",
+                name,
+                email,
+                id
+        );
+    }
+
     // na registráciu
     public void saveUser(String name, String email, String passwordHash) {
         jdbc.update(

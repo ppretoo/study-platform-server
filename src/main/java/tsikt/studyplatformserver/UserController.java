@@ -28,4 +28,41 @@ public class UserController {
         activityRepo.log(null, null, "USER_CREATED", "User: " + user.getEmail());
     }
  */
+
+    @GetMapping("/{id}")
+    public User getUserById(@PathVariable Long id) {
+        return repo.findById(id);
+    }
+
+    @PutMapping("/{id}")
+    public User updateProfile(@PathVariable Long id,
+                              @RequestBody UpdateProfileRequest req) {
+
+        // jednoduché validácie
+        if (req.getName() == null || req.getName().isBlank()
+                || req.getEmail() == null || req.getEmail().isBlank()) {
+            throw new IllegalArgumentException("Name and email must not be empty");
+        }
+
+        repo.updateProfile(id, req.getName(), req.getEmail());
+
+        // logovanie aktivity
+        activityRepo.log(id, null,
+                "PROFILE_UPDATED",
+                "User updated profile: " + req.getEmail());
+
+        // vrátime aktualizovaného používateľa
+        return repo.findById(id);
+    }
+
+    public static class UpdateProfileRequest {
+        private String name;
+        private String email;
+
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+    }
 }

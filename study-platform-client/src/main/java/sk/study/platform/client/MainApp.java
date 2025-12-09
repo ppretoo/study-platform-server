@@ -8,6 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -23,10 +24,34 @@ public class MainApp extends Application {
     private final TextArea detailArea = new TextArea();
     private Group selectedGroup;
 
+    private Long currentUserId = null;
+    private String currentUserName = null;
+    private Label currentUserLabel = new Label("Neprihlásený");
+
+    private HBox controlsBar;
+
+
     @Override
     public void start(Stage stage) {
         stage.setTitle("Study Platform Client");
 
+        //UI for AUTH
+        TextField nameField = new TextField();
+        nameField.setPromptText("Meno (registrácia)");
+
+        TextField emailField = new TextField();
+        emailField.setPromptText("Email");
+
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("Heslo");
+
+        Button loginBtn = new Button("Prihlásiť");
+        loginBtn.setOnAction(e -> doLogin(emailField.getText(), passwordField.getText()));
+
+        Button registerBtn = new Button("Registrovať");
+        registerBtn.setOnAction(e -> doRegister(nameField.getText(), emailField.getText(), passwordField.getText()));
+
+        //UI for else
         Button loadGroupsBtn = new Button("Načítaj skupiny");
         loadGroupsBtn.setOnAction(e -> loadGroups());
 
@@ -49,14 +74,25 @@ public class MainApp extends Application {
         Button addTaskBtn = new Button("Pridaj úlohu");
         addTaskBtn.setOnAction(e -> addTask(newTaskTitle.getText(), newTaskDeadline.getText()));
 
-        HBox topBar = new HBox(
+
+        //TOP BARS
+        HBox authBar = new HBox(
+                10,
+                nameField, emailField, passwordField,
+                registerBtn, loginBtn, currentUserLabel
+        );
+        authBar.setPadding(new Insets(10));
+
+        controlsBar = new HBox(
                 10,
                 loadGroupsBtn,
                 newTaskTitle, newTaskDeadline, addTaskBtn,
                 newResName, newResUrl, addResBtn
         );
-        topBar.setPadding(new Insets(10));
+        controlsBar.setPadding(new Insets(10));
+        controlsBar.setDisable(true);
 
+        VBox topArea = new VBox(5, authBar, controlsBar);
 
         detailArea.setEditable(false);
         detailArea.setWrapText(true);
@@ -69,7 +105,7 @@ public class MainApp extends Application {
 
 
         BorderPane root = new BorderPane();
-        root.setTop(topBar);
+        root.setTop(topArea);
         root.setLeft(groupListView);
         root.setCenter(detailArea);
         BorderPane.setMargin(groupListView, new Insets(10));
@@ -153,7 +189,6 @@ public class MainApp extends Application {
         detailArea.setText(sb.toString());
     }
 
-
     private void showError(String msg) {
         detailArea.setText(msg);
     }
@@ -163,6 +198,11 @@ public class MainApp extends Application {
     }
 
     private void addTask(String title, String deadline) {
+        if (currentUserId == null) {
+            showError("Najprv sa prihlás.");
+            return;
+        }
+
         if (selectedGroup == null) {
             showError("Najprv vyber skupinu.");
             return;
@@ -191,6 +231,11 @@ public class MainApp extends Application {
     }
 
     private void addResource(String name, String url) {
+        if (currentUserId == null) {
+            showError("Najprv sa prihlás.");
+            return;
+        }
+
         if (selectedGroup == null) {
             showError("Najprv vyber skupinu.");
             return;
@@ -205,14 +250,16 @@ public class MainApp extends Application {
         }
 
         try {
-            // jednoduchý JSON string – typ dáme LINK a uploadedBy necháme null
+            String uploadedByValue = (currentUserId == null) ? "null" : currentUserId.toString();
+
             String json = "{"
                     + "\"groupId\":" + selectedGroup.getId() + ","
                     + "\"name\":\"" + name.replace("\"", "\\\"") + "\","
                     + "\"type\":\"LINK\","
                     + "\"url\":\"" + url.replace("\"", "\\\"") + "\","
-                    + "\"uploadedBy\":null"
+                    + "\"uploadedBy\":" + uploadedByValue
                     + "}";
+
 
             backendClient.post("/api/resources", json);
 
@@ -221,6 +268,78 @@ public class MainApp extends Application {
 
         } catch (Exception ex) {
             showError("Chyba pri pridávaní materiálu: " + ex.getMessage());
+        }
+    }
+
+    private void doLogin(String email, String password) {
+        if (email == null || email.isBlank() || password == null || password.isBlank()) {
+            showError("Zadaj email aj heslo.");
+            return;
+        }
+
+        try {
+            String json = "{"
+                    + "\"email\":\"" + email.replace("\"", "\\\"") + "\","
+                    + "\"password\":\"" + password.replace("\"", "\\\"") + "\""
+                    + "}";
+
+            String response = backendClient.post("/api/auth/login", json);
+
+            LoginResponse loginResponse = gson.fromJson(response, LoginResponse.class);
+
+            if (loginResponse == null || loginResponse.getUserId() == null) {
+                showError("Prihlásenie zlyhalo.");
+                return;
+            }
+
+            currentUserId = loginResponse.getUserId();
+            currentUserName = loginResponse.getName();
+            currentUserLabel.setText("Prihlásený: " + currentUserName + " (" + loginResponse.getEmail() + ")");
+            controlsBar.setDisable(false);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            showError("Prihlásenie zlyhalo: " + ex.getMessage());
+        }
+    }
+
+    private void doRegister(String name, String email, String password) {
+        if (name == null || name.isBlank()
+                || email == null || email.isBlank()
+                || password == null || password.isBlank()) {
+            showError("Zadaj meno, email aj heslo pre registráciu.");
+            return;
+        }
+
+        try {
+            String json = "{"
+                    + "\"name\":\"" + name.replace("\"", "\\\"") + "\","
+                    + "\"email\":\"" + email.replace("\"", "\\\"") + "\","
+                    + "\"password\":\"" + password.replace("\"", "\\\"") + "\""
+                    + "}";
+
+            String response = backendClient.post("/api/auth/register", json);
+            if (response.startsWith("Email already registered")) {
+                showError("Tento email je už zaregistrovaný. Skús sa prihlásiť.");
+                return;
+            }
+            if (response.startsWith("Registration failed")) {
+                showError("Registrácia zlyhala.");
+                return;
+            }
+
+            SimpleUser user = gson.fromJson(response, SimpleUser.class);
+            if (user == null || user.getId() == null) {
+                showError("Registrácia zlyhala.");
+                return;
+            }
+
+            currentUserId = user.getId();
+            currentUserName = user.getName();
+            currentUserLabel.setText("Prihlásený (nový účet): " + currentUserName + " (" + user.getEmail() + ")");
+            controlsBar.setDisable(false);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            showError("Registrácia zlyhala: " + ex.getMessage());
         }
     }
 

@@ -3,6 +3,7 @@ package tsikt.studyplatformserver.auth;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.dao.DataIntegrityViolationException;
 import tsikt.studyplatformserver.User;
 @RestController
 @RequestMapping("/api/auth")
@@ -20,10 +21,15 @@ public class AuthController {
         try {
             User user = authService.register(request);
             return ResponseEntity.ok(user);
+        } catch (DataIntegrityViolationException e) {
+            // porušenie UNIQUE(email)
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Email already registered");
         } catch (Exception e) {
-            // napr. duplicate email
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Registration failed: " + e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Registration failed");
         }
     }
 

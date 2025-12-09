@@ -1,11 +1,13 @@
+sk/study/platform/client/Membership.class
 sk/study/platform/client/Group.class
-sk/study/platform/client/MainApp$3.class
 sk/study/platform/client/MainApp$1.class
-sk/study/platform/client/MainApp$2.class
 sk/study/platform/client/SimpleUser.class
 sk/study/platform/client/Resource.class
-sk/study/platform/client/User.class
 sk/study/platform/client/MainApp.class
-sk/study/platform/client/LoginResponse.class
 sk/study/platform/client/BackendClient.class
+sk/study/platform/client/MainApp$4.class
+sk/study/platform/client/MainApp$3.class
+sk/study/platform/client/MainApp$2.class
+sk/study/platform/client/User.class
+sk/study/platform/client/LoginResponse.class
 sk/study/platform/client/Task.class

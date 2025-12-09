@@ -2,6 +2,7 @@ package tsikt.studyplatformserver;
 
 import java.util.List;
 
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
@@ -31,6 +32,27 @@ public class StudyGroupRepository {
                 "INSERT INTO study_groups(name, description) VALUES (?, ?)",
                 group.getName(),
                 group.getDescription()
+        );
+    }
+
+    public void createGroup(String name, String description) {
+        jdbc.update(
+                "INSERT INTO study_groups(name, description) VALUES (?, ?)",
+                name, description
+        );
+    }
+
+    public void updateGroup(Long id, String name, String description) {
+        jdbc.update(
+                "UPDATE study_groups SET name = ?, description = ? WHERE id = ?",
+                name, description, id
+        );
+    }
+
+    public void deleteGroup(Long id) {
+        jdbc.update(
+                "DELETE FROM study_groups WHERE id = ?",
+                id
         );
     }
 }

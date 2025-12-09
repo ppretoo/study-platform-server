@@ -15,14 +15,17 @@ public class MembershipRepository {
         this.jdbc = jdbc;
     }
 
-    private final RowMapper<Membership> membershipRowMapper = (rs, rowNum) ->
-            new Membership(
-                    rs.getLong("id"),
-                    rs.getLong("user_id"),
-                    rs.getLong("group_id"),
-                    rs.getString("role"),
-                    rs.getString("joined_at")
-            );
+    private final RowMapper<Membership> membershipRowMapper = (rs, rowNum) -> {
+        Membership m = new Membership(
+                rs.getLong("id"),
+                rs.getLong("user_id"),
+                rs.getLong("group_id"),
+                rs.getString("role"),
+                rs.getString("joined_at")
+        );
+        m.setUserName(rs.getString("user_name"));
+        return m;
+    };
 
     public void save(Membership m) {
         jdbc.update(
@@ -35,7 +38,11 @@ public class MembershipRepository {
 
     public List<Membership> findByGroupId(Long groupId) {
         return jdbc.query(
-                "SELECT id, user_id, group_id, role, joined_at FROM memberships WHERE group_id = ?",
+                "SELECT m.id, m.user_id, m.group_id, m.role, m.joined_at, " +
+                        "u.name AS user_name " +
+                        "FROM memberships m " +
+                        "JOIN users u ON m.user_id = u.id " +
+                        "WHERE m.group_id = ?",
                 membershipRowMapper,
                 groupId
         );
@@ -47,5 +54,27 @@ public class MembershipRepository {
                 membershipRowMapper,
                 userId
         );
+    }
+
+    public void insert(Long userId, Long groupId, String role) {
+        if (existsByUserAndGroup(userId, groupId)) {
+            return;
+        }
+
+        jdbc.update(
+                "INSERT INTO memberships(user_id, group_id, role) VALUES (?, ?, ?)",
+                userId, groupId, role
+        );
+    }
+
+
+    public boolean existsByUserAndGroup(Long userId, Long groupId) {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM memberships WHERE user_id = ? AND group_id = ?",
+                Integer.class,
+                userId,
+                groupId
+        );
+        return count != null && count > 0;
     }
 }

@@ -34,6 +34,11 @@ public class UserController {
         return repo.findById(id);
     }
 
+    @GetMapping("/by-email")
+    public User getUserByEmail(@RequestParam String email) {
+        return repo.findByEmail(email);
+    }
+
     @PutMapping("/{id}")
     public User updateProfile(@PathVariable Long id,
                               @RequestBody UpdateProfileRequest req) {

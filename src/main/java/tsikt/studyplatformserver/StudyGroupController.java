@@ -24,7 +24,22 @@ public class StudyGroupController {
 
     @PostMapping
     public void createGroup(@RequestBody StudyGroup group) {
-        repo.save(group);
-        activityRepo.log(null, null, "GROUP_CREATED", "Group: " + group.getName());
+        repo.createGroup(group.getName(), group.getDescription());
+        activityRepo.log(null, null, "GROUP_CREATED","Group: " + group.getName());
     }
+
+    @PutMapping("/{id}")
+    public void updateGroup(@PathVariable Long id, @RequestBody StudyGroup group) {
+        repo.updateGroup(id, group.getName(), group.getDescription());
+        activityRepo.log(null, id, "GROUP_UPDATED",
+                "Group: " + group.getName());
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteGroup(@PathVariable Long id) {
+        repo.deleteGroup(id);
+        activityRepo.log(null, id, "GROUP_DELETED",
+                "Group id: " + id);
+    }
+
 }

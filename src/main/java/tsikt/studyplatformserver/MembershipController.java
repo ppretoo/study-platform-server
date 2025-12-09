@@ -18,18 +18,26 @@ public class MembershipController {
     }
 
     @PostMapping
-    public void addMembership(@RequestBody Membership membership) {
-        if (membership.getRole() == null || membership.getRole().isBlank()) {
-            membership.setRole("MEMBER");
+    public String addMembership(@RequestBody Membership membership) {
+
+        Long userId = membership.getUserId();
+        Long groupId = membership.getGroupId();
+        String role = membership.getRole();
+
+        if (repo.existsByUserAndGroup(userId, groupId)) {
+            return "ALREADY_MEMBER";
         }
-        repo.save(membership);
+
+        repo.insert(userId, groupId, role);
 
         activityRepo.log(
-                membership.getUserId(),
-                membership.getGroupId(),
+                userId,
+                groupId,
                 "MEMBERSHIP_ADDED",
-                "Role: " + membership.getRole()
+                "User joined group"
         );
+
+        return "OK";
     }
     @GetMapping("/by-group/{groupId}")
     public List<Membership> getByGroup(@PathVariable Long groupId) {

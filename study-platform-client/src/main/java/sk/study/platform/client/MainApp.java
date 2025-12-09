@@ -10,6 +10,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import java.nio.charset.StandardCharsets;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -28,7 +29,7 @@ public class MainApp extends Application {
     private String currentUserName = null;
     private Label currentUserLabel = new Label("Neprihlásený");
 
-    private HBox controlsBar;
+    private VBox controlsBar;
     private String currentUserEmail = null;
     private Button updateProfileBtn;   //start()
 
@@ -58,6 +59,31 @@ public class MainApp extends Application {
         updateProfileBtn = new Button("Ulož profil");
         updateProfileBtn.setDisable(true); // pred prihlásením zakázané
         updateProfileBtn.setOnAction(e -> updateProfile(nameField.getText(), emailField.getText()));
+
+        // ----------------- SKUPINY -----------------
+        TextField groupNameField = new TextField();
+        groupNameField.setPromptText("Názov skupiny");
+
+        TextField groupDescField = new TextField();
+        groupDescField.setPromptText("Popis skupiny");
+
+        Button createGroupBtn = new Button("Vytvor skupinu");
+        createGroupBtn.setOnAction(e ->
+                createGroup(groupNameField.getText(), groupDescField.getText()));
+
+        Button updateGroupBtn = new Button("Uprav skupinu");
+        updateGroupBtn.setOnAction(e ->
+                updateGroup(groupNameField.getText(), groupDescField.getText()));
+
+        Button deleteGroupBtn = new Button("Zmaž skupinu");
+        deleteGroupBtn.setOnAction(e -> deleteSelectedGroup());
+
+        TextField memberEmailField = new TextField();
+        memberEmailField.setPromptText("Email člena");
+
+        Button addMemberBtn = new Button("Pridaj člena");
+        addMemberBtn.setOnAction(e ->
+                addMemberToGroup(memberEmailField.getText()));
 
 
         //UI for else
@@ -108,15 +134,30 @@ public class MainApp extends Application {
         );
         authBar.setPadding(new Insets(10));
 
-        controlsBar = new HBox(
+        HBox groupBar = new HBox(
                 10,
                 loadGroupsBtn,
+                groupNameField, groupDescField,
+                createGroupBtn, updateGroupBtn, deleteGroupBtn,
+                memberEmailField, addMemberBtn
+        );
+        groupBar.setPadding(new Insets(10));
+
+        HBox taskBar = new HBox(
+                10,
                 newTaskTitle, newTaskDeadline, addTaskBtn,
-                taskIdField, statusBox, changeStatusBtn,
+                taskIdField, statusBox, changeStatusBtn
+        );
+        taskBar.setPadding(new Insets(10));
+
+        HBox resourceBar = new HBox(
+                10,
                 newResName, newResUrl, addResBtn
         );
+        resourceBar.setPadding(new Insets(10));
 
-        controlsBar.setPadding(new Insets(10));
+        controlsBar = new VBox(5, groupBar, taskBar, resourceBar);
+        controlsBar.setPadding(new Insets(5));
         controlsBar.setDisable(true);
 
         VBox topArea = new VBox(5, authBar, controlsBar);
@@ -219,6 +260,33 @@ public class MainApp extends Application {
         } catch (Exception ex) {
             sb.append("\nChyba pri načítaní úloh: ").append(ex.getMessage()).append("\n");
         }
+
+        // ČLENOVIA SKUPINY
+        try {
+            String jsonMem = backendClient.get("/api/memberships/by-group/" + group.getId());
+            java.lang.reflect.Type memListType =
+                    new com.google.gson.reflect.TypeToken<java.util.List<Membership>>() {}.getType();
+            java.util.List<Membership> members = gson.fromJson(jsonMem, memListType);
+
+            sb.append("\nČlenovia skupiny:\n");
+            if (members == null || members.isEmpty()) {
+                sb.append("  - žiadni členovia\n");
+            } else {
+                for (Membership m : members) {
+
+                    String displayName = (m.getUserName() != null && !m.getUserName().isBlank())
+                            ? m.getUserName()
+                            : "userId: " + m.getUserId();
+
+                    sb.append("  - ")
+                            .append(displayName)
+                            .append("\n");
+                }
+            }
+        } catch (Exception ex) {
+            sb.append("\nChyba pri načítaní členov: ").append(ex.getMessage()).append("\n");
+        }
+
 
         // MATERIÁLY
         try {
@@ -370,6 +438,120 @@ public class MainApp extends Application {
             showError("Chyba pri pridávaní materiálu: " + ex.getMessage());
         }
     }
+
+    private void createGroup(String name, String description) {
+        if (currentUserId == null) {
+            showError("Najprv sa prihlás.");
+            return;
+        }
+        if (name == null || name.isBlank()) {
+            showError("Zadaj názov skupiny.");
+            return;
+        }
+
+        try {
+            String json = "{"
+                    + "\"name\":\"" + name.replace("\"", "\\\"") + "\","
+                    + "\"description\":\"" + (description == null ? "" : description.replace("\"", "\\\"")) + "\""
+                    + "}";
+
+            backendClient.post("/api/groups", json);
+            loadGroups();
+        } catch (Exception ex) {
+            showError("Chyba pri vytváraní skupiny: " + ex.getMessage());
+        }
+    }
+
+    private void updateGroup(String name, String description) {
+        if (currentUserId == null) {
+            showError("Najprv sa prihlás.");
+            return;
+        }
+        if (selectedGroup == null) {
+            showError("Najprv vyber skupinu.");
+            return;
+        }
+        if (name == null || name.isBlank()) {
+            showError("Zadaj názov skupiny.");
+            return;
+        }
+
+        try {
+            String json = "{"
+                    + "\"name\":\"" + name.replace("\"", "\\\"") + "\","
+                    + "\"description\":\"" + (description == null ? "" : description.replace("\"", "\\\"")) + "\""
+                    + "}";
+
+            backendClient.put("/api/groups/" + selectedGroup.getId(), json);
+            loadGroups();
+        } catch (Exception ex) {
+            showError("Chyba pri úprave skupiny: " + ex.getMessage());
+        }
+    }
+
+    private void deleteSelectedGroup() {
+        if (currentUserId == null) {
+            showError("Najprv sa prihlás.");
+            return;
+        }
+        if (selectedGroup == null) {
+            showError("Najprv vyber skupinu.");
+            return;
+        }
+
+        try {
+            backendClient.delete("/api/groups/" + selectedGroup.getId());
+            selectedGroup = null;
+            loadGroups();
+            detailArea.clear();
+        } catch (Exception ex) {
+            showError("Chyba pri mazaní skupiny: " + ex.getMessage());
+        }
+    }
+
+    private void addMemberToGroup(String memberEmail) {
+        if (currentUserId == null) {
+            showError("Najprv sa prihlás.");
+            return;
+        }
+        if (selectedGroup == null) {
+            showError("Najprv vyber skupinu.");
+            return;
+        }
+        if (memberEmail == null || memberEmail.isBlank()) {
+            showError("Zadaj email člena, ktorého chceš pridať.");
+            return;
+        }
+
+        try {
+            String encodedEmail = java.net.URLEncoder.encode(
+                    memberEmail,
+                    StandardCharsets.UTF_8
+            );
+
+            String userJson = backendClient.get("/api/users/by-email?email=" + encodedEmail);
+            User user = gson.fromJson(userJson, User.class);
+
+            if (user == null || user.getId() == null) {
+                showError("Používateľ s týmto emailom neexistuje.");
+                return;
+            }
+
+            String json = "{"
+                    + "\"userId\":" + user.getId() + ","
+                    + "\"groupId\":" + selectedGroup.getId() + ","
+                    + "\"role\":\"MEMBER\""
+                    + "}";
+
+            backendClient.post("/api/memberships", json);
+
+            // prípadne raz doplníme aj zobrazenie zoznamu členov
+            showGroupDetail(selectedGroup);
+        } catch (Exception ex) {
+            showError("Chyba pri pridávaní člena: " + ex.getMessage());
+        }
+    }
+
 
     private void doLogin(String email, String password) {
         if (email == null || email.isBlank() || password == null || password.isBlank()) {

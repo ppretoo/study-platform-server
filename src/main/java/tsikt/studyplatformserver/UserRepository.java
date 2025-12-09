@@ -38,6 +38,22 @@ public class UserRepository {
         );
     }
 
+    public User findByEmail(String email) {
+        try {
+            return jdbc.queryForObject(
+                    "SELECT id, name, email FROM users WHERE email = ?",
+                    (rs, rowNum) -> new User(
+                            rs.getLong("id"),
+                            rs.getString("name"),
+                            rs.getString("email")
+                    ),
+                    email
+            );
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
     public void updateProfile(Long id, String name, String email) {
         jdbc.update(
                 "UPDATE users SET name = ?, email = ? WHERE id = ?",

@@ -21,10 +21,11 @@ public class UserController {
     public List<User> getAllUsers() {
         return repo.findAll();
     }
-
+/*
     @PostMapping
     public void createUser(@RequestBody User user) {
         repo.save(user);
         activityRepo.log(null, null, "USER_CREATED", "User: " + user.getEmail());
     }
+ */
 }

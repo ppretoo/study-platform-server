@@ -20,6 +20,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
 
     implementation 'org.xerial:sqlite-jdbc:3.45.3.0'
+    implementation 'org.springframework.security:spring-security-crypto'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }

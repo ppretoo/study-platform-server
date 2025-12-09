@@ -8,6 +8,7 @@ public class Resource {
     private String type;
     private String url;
     private Long uploadedBy;
+    private String createdBy;
 
     public Long getId() { return id; }
     public Long getGroupId() { return groupId; }
@@ -20,5 +21,13 @@ public class Resource {
     public String toString() {
         String t = (type == null) ? "" : "[" + type + "] ";
         return t + name + " -> " + url;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
     }
 }

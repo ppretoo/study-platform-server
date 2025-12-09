@@ -28,28 +28,38 @@ public class TaskRepository {
 
     public List<Task> findByGroupId(Long groupId) {
         return jdbc.query(
-                "SELECT id, group_id, title, description, status, deadline, created_at " +
+                "SELECT id, group_id, title, description, status, deadline, created_by " +
                         "FROM tasks WHERE group_id = ?",
-                taskRowMapper,
+                (rs, rowNum) -> {
+                    Task task = new Task();
+                    task.setId(rs.getLong("id"));
+                    task.setGroupId(rs.getLong("group_id"));
+                    task.setTitle(rs.getString("title"));
+                    task.setDescription(rs.getString("description"));
+                    task.setStatus(rs.getString("status"));
+                    task.setDeadline(rs.getString("deadline"));
+                    task.setCreatedBy(rs.getString("created_by")); // ← TENTO RIADOK
+                    return task;
+                },
                 groupId
         );
     }
 
     public void save(Task task) {
-        // ak status neprišiel, nastavíme OPEN
         String status = task.getStatus();
         if (status == null || status.isBlank()) {
             status = "OPEN";
         }
 
         jdbc.update(
-                "INSERT INTO tasks(group_id, title, description, status, deadline) " +
-                        "VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO tasks(group_id, title, description, status, deadline, created_by) " +
+                        "VALUES (?, ?, ?, ?, ?, ?)",
                 task.getGroupId(),
                 task.getTitle(),
                 task.getDescription(),
                 status,
-                task.getDeadline()
+                task.getDeadline(),
+                task.getCreatedBy()
         );
     }
 

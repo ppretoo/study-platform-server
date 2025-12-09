@@ -192,6 +192,9 @@ public class MainApp extends Application {
                     if (t.getDeadline() != null) {
                         sb.append(" (do ").append(t.getDeadline()).append(")");
                     }
+                    if (t.getCreatedBy() != null && !t.getCreatedBy().isBlank()) {
+                        sb.append(" — vytvoril: ").append(t.getCreatedBy());
+                    }
                     sb.append("\n");
                 }
 
@@ -218,7 +221,14 @@ public class MainApp extends Application {
                 sb.append("  - žiadne materiály\n");
             } else {
                 for (Resource r : resources) {
-                    sb.append("  - ").append(r.toString()).append("\n");
+                    sb.append("  - [LINK] ")
+                            .append(r.getName())
+                            .append(" -> ")
+                            .append(r.getUrl());
+                    if (r.getCreatedBy() != null && !r.getCreatedBy().isBlank()) {
+                        sb.append(" — pridal: ").append(r.getCreatedBy());
+                    }
+                    sb.append("\n");
                 }
             }
         } catch (Exception ex) {
@@ -254,9 +264,9 @@ public class MainApp extends Application {
         try {
             String json = "{"
                     + "\"groupId\":" + selectedGroup.getId() + ","
-                    + "\"title\":\"" + title.replace("\"", "\\\"") + "\","
-                    + "\"description\":\"\","
-                    + "\"deadline\":\"" + deadline + "\""
+                    + "\"title\":\"" + title + "\","
+                    + "\"deadline\":\"" + deadline + "\","
+                    + "\"createdBy\":\"" + currentUserName + "\""
                     + "}";
 
             backendClient.post("/api/tasks", json);
@@ -334,14 +344,13 @@ public class MainApp extends Application {
 
             String json = "{"
                     + "\"groupId\":" + selectedGroup.getId() + ","
-                    + "\"name\":\"" + name.replace("\"", "\\\"") + "\","
-                    + "\"type\":\"LINK\","
-                    + "\"url\":\"" + url.replace("\"", "\\\"") + "\","
-                    + "\"uploadedBy\":" + uploadedByValue
+                    + "\"name\":\"" + name + "\","
+                    + "\"url\":\"" + url + "\","
+                    + "\"createdBy\":\"" + currentUserName + "\""
                     + "}";
 
-
             backendClient.post("/api/resources", json);
+
 
             // po pridaní znova načítaj detail skupiny (aby sa zobrazil nový resource)
             showGroupDetail(selectedGroup);

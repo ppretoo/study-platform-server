@@ -9,10 +9,11 @@ public class Task {
     private String status;
     private String deadline;
     private String createdAt;
+    private String createdBy;
 
     public Task() {
+        // prázdny konštruktor pre RowMapper a Jackson
     }
-
     public Task(Long id, Long groupId, String title, String description,
                 String status, String deadline, String createdAt) {
         this.id = id;
@@ -44,4 +45,12 @@ public class Task {
 
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
 }

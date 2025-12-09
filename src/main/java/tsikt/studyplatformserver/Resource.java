@@ -9,9 +9,8 @@ public class Resource {
     private String url;
     private Long uploadedBy;
     private String uploadedAt;
+    private String createdBy;
 
-    public Resource() {
-    }
 
     public Resource(Long id, Long groupId, String name, String type,
                     String url, Long uploadedBy, String uploadedAt) {
@@ -44,4 +43,12 @@ public class Resource {
 
     public String getUploadedAt() { return uploadedAt; }
     public void setUploadedAt(String uploadedAt) { this.uploadedAt = uploadedAt; }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
 }

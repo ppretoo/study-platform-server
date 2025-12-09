@@ -20,4 +20,15 @@ public class Task {
         String d = (deadline == null) ? "" : " (do " + deadline + ")";
         return "- [" + status + "] (id=" + id + ") " + title + d;
     }
+
+    private String createdBy;
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
+    }
+
 }

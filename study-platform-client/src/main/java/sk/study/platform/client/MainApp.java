@@ -49,8 +49,14 @@ public class MainApp extends Application {
         Button addTaskBtn = new Button("Pridaj úlohu");
         addTaskBtn.setOnAction(e -> addTask(newTaskTitle.getText(), newTaskDeadline.getText()));
 
-        HBox topBar = new HBox(10, loadGroupsBtn, newResName, newResUrl, addResBtn);
+        HBox topBar = new HBox(
+                10,
+                loadGroupsBtn,
+                newTaskTitle, newTaskDeadline, addTaskBtn,
+                newResName, newResUrl, addResBtn
+        );
         topBar.setPadding(new Insets(10));
+
 
         detailArea.setEditable(false);
         detailArea.setWrapText(true);

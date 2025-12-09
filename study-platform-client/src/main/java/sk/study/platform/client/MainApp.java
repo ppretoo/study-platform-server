@@ -170,16 +170,38 @@ public class MainApp extends Application {
             if (tasks.isEmpty()) {
                 sb.append("  - žiadne úlohy\n");
             } else {
+
+                int openCount = 0;
+                int inProgressCount = 0;
+                int doneCount = 0;
+
                 for (Task t : tasks) {
+
+                    String status = t.getStatus();
+                    if ("OPEN".equalsIgnoreCase(status)) {
+                        openCount++;
+                    } else if ("IN_PROGRESS".equalsIgnoreCase(status)) {
+                        inProgressCount++;
+                    } else if ("DONE".equalsIgnoreCase(status)) {
+                        doneCount++;
+                    }
+
                     sb.append("  - #").append(t.getId())
-                            .append(" [").append(t.getStatus()).append("] ")
+                            .append(" [").append(status).append("] ")
                             .append(t.getTitle());
                     if (t.getDeadline() != null) {
                         sb.append(" (do ").append(t.getDeadline()).append(")");
                     }
                     sb.append("\n");
                 }
+
+                // štatistika úloh
+                sb.append("\nŠtatistika úloh:\n");
+                sb.append("  OPEN: ").append(openCount).append("\n");
+                sb.append("  IN_PROGRESS: ").append(inProgressCount).append("\n");
+                sb.append("  DONE: ").append(doneCount).append("\n");
             }
+
         } catch (Exception ex) {
             sb.append("\nChyba pri načítaní úloh: ").append(ex.getMessage()).append("\n");
         }

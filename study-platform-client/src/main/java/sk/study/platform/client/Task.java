@@ -18,6 +18,6 @@ public class Task {
     @Override
     public String toString() {
         String d = (deadline == null) ? "" : " (do " + deadline + ")";
-        return "[" + status + "] " + title + d;
+        return "- [" + status + "] (id=" + id + ") " + title + d;
     }
 }

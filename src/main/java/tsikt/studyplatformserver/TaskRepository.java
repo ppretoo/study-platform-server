@@ -36,10 +36,11 @@ public class TaskRepository {
     }
 
     public void save(Task task) {
-        // ak status neprišiel, nastavíme TODO
-        String status = (task.getStatus() == null || task.getStatus().isBlank())
-                ? "TODO"
-                : task.getStatus();
+        // ak status neprišiel, nastavíme OPEN
+        String status = task.getStatus();
+        if (status == null || status.isBlank()) {
+            status = "OPEN";
+        }
 
         jdbc.update(
                 "INSERT INTO tasks(group_id, title, description, status, deadline) " +

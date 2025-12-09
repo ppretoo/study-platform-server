@@ -36,4 +36,19 @@ public class BackendClient {
 
         return response.body();
     }
+
+    public String patch(String path, String json) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + path))
+                .header("Content-Type", "application/json")
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json))
+                .build();
+
+        HttpResponse<String> response =
+                client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        return response.body();
+    }
+
+
 }

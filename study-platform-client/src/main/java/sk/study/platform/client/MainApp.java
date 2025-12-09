@@ -74,6 +74,20 @@ public class MainApp extends Application {
         Button addTaskBtn = new Button("Pridaj úlohu");
         addTaskBtn.setOnAction(e -> addTask(newTaskTitle.getText(), newTaskDeadline.getText()));
 
+        // OVLÁDANIE STAVU ÚLOH
+        TextField taskIdField = new TextField();
+        taskIdField.setPromptText("ID úlohy");
+
+        ComboBox<String> statusBox = new ComboBox<>();
+        statusBox.getItems().addAll("OPEN", "IN_PROGRESS", "DONE");
+        statusBox.setPromptText("Nový stav");
+
+        Button changeStatusBtn = new Button("Zmeň stav");
+        changeStatusBtn.setOnAction(e ->
+                changeTaskStatus(taskIdField.getText(), statusBox.getValue())
+        );
+
+
 
         //TOP BARS
         HBox authBar = new HBox(
@@ -87,8 +101,10 @@ public class MainApp extends Application {
                 10,
                 loadGroupsBtn,
                 newTaskTitle, newTaskDeadline, addTaskBtn,
+                taskIdField, statusBox, changeStatusBtn,
                 newResName, newResUrl, addResBtn
         );
+
         controlsBar.setPadding(new Insets(10));
         controlsBar.setDisable(true);
 
@@ -111,7 +127,7 @@ public class MainApp extends Application {
         BorderPane.setMargin(groupListView, new Insets(10));
         BorderPane.setMargin(detailArea, new Insets(10));
 
-        Scene scene = new Scene(root, 800, 400);
+        Scene scene = new Scene(root, 1100, 500);
         stage.setScene(scene);
         stage.show();
     }
@@ -155,7 +171,8 @@ public class MainApp extends Application {
                 sb.append("  - žiadne úlohy\n");
             } else {
                 for (Task t : tasks) {
-                    sb.append("  - [").append(t.getStatus()).append("] ")
+                    sb.append("  - #").append(t.getId())
+                            .append(" [").append(t.getStatus()).append("] ")
                             .append(t.getTitle());
                     if (t.getDeadline() != null) {
                         sb.append(" (do ").append(t.getDeadline()).append(")");
@@ -229,6 +246,47 @@ public class MainApp extends Application {
             showError("Chyba pri pridávaní úlohy: " + ex.getMessage());
         }
     }
+
+    private void changeTaskStatus(String taskIdText, String newStatus) {
+        if (currentUserId == null) {
+            showError("Najprv sa prihlás.");
+            return;
+        }
+
+        if (selectedGroup == null) {
+            showError("Najprv vyber skupinu.");
+            return;
+        }
+
+        if (taskIdText == null || taskIdText.isBlank()) {
+            showError("Zadaj ID úlohy.");
+            return;
+        }
+
+        if (newStatus == null || newStatus.isBlank()) {
+            showError("Vyber nový stav (OPEN / IN_PROGRESS / DONE).");
+            return;
+        }
+
+        long taskId;
+        try {
+            taskId = Long.parseLong(taskIdText.trim());
+        } catch (NumberFormatException ex) {
+            showError("ID úlohy musí byť číslo.");
+            return;
+        }
+
+        try {
+            String json = "{ \"status\":\"" + newStatus + "\" }";
+            backendClient.patch("/api/tasks/" + taskId + "/status", json);
+
+            // po zmene stavu znova načítaj detail skupiny
+            showGroupDetail(selectedGroup);
+        } catch (Exception ex) {
+            showError("Chyba pri zmene stavu úlohy: " + ex.getMessage());
+        }
+    }
+
 
     private void addResource(String name, String url) {
         if (currentUserId == null) {

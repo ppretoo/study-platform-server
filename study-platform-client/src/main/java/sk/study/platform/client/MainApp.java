@@ -2,6 +2,7 @@ package sk.study.platform.client;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import javafx.application.Platform;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -32,6 +33,7 @@ public class MainApp extends Application {
     private VBox controlsBar;
     private String currentUserEmail = null;
     private Button updateProfileBtn;   //start()
+    private TaskWebSocketClient wsClient;
 
 
 
@@ -552,6 +554,26 @@ public class MainApp extends Application {
         }
     }
 
+    private void startWebSocket() {
+        // ak už nejaký beží, zavri ho
+        if (wsClient != null) {
+            wsClient.close();
+        }
+
+        wsClient = new TaskWebSocketClient(msg ->
+                Platform.runLater(() -> appendNotification(msg)));
+
+        String base = backendClient.getBaseUrl(); // napr. http://localhost:8080
+        String wsUrl = base.replaceFirst("^http", "ws") + "/ws/tasks";
+
+        wsClient.connect(wsUrl);
+    }
+
+    private void appendNotification(String msg) {
+        // jednoducho pripíš notifikáciu na koniec text area
+        detailArea.appendText("\n[NOTIFIKÁCIA] " + msg + "\n");
+    }
+
 
     private void doLogin(String email, String password) {
         if (email == null || email.isBlank() || password == null || password.isBlank()) {
@@ -580,6 +602,7 @@ public class MainApp extends Application {
             currentUserLabel.setText("Prihlásený: " + currentUserName + " (" + currentUserEmail + ")");
             updateProfileBtn.setDisable(false);
             controlsBar.setDisable(false);
+            startWebSocket();
         } catch (Exception ex) {
             ex.printStackTrace();
             showError("Prihlásenie zlyhalo: " + ex.getMessage());
@@ -623,6 +646,7 @@ public class MainApp extends Application {
             currentUserLabel.setText("Prihlásený (nový účet): " + currentUserName + " (" + currentUserEmail + ")");
             updateProfileBtn.setDisable(false);
             controlsBar.setDisable(false);
+            startWebSocket();
         } catch (Exception ex) {
             ex.printStackTrace();
             showError("Registrácia zlyhala: " + ex.getMessage());
@@ -659,4 +683,6 @@ public class MainApp extends Application {
             showError("Chyba pri aktualizácii profilu: " + ex.getMessage());
         }
     }
+
+
 }

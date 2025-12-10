@@ -90,4 +90,9 @@ public class BackendClient {
             throw new IOException("HTTP DELETE " + path + " -> " + response.statusCode());
         }
     }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
 }

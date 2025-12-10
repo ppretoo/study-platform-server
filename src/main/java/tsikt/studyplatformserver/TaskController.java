@@ -11,10 +11,14 @@ public class TaskController {
 
     private final TaskRepository repo;
     private final ActivityLogRepository activityRepo;
+    private final TaskNotificationHandler notificationHandler;
 
-    public TaskController(TaskRepository repo, ActivityLogRepository activityRepo) {
+    public TaskController(TaskRepository repo,
+                          ActivityLogRepository activityRepo,
+                          TaskNotificationHandler notificationHandler) {
         this.repo = repo;
         this.activityRepo = activityRepo;
+        this.notificationHandler = notificationHandler;
     }
 
     @GetMapping("/by-group/{groupId}")
@@ -26,6 +30,7 @@ public class TaskController {
     public void createTask(@RequestBody Task task) {
         repo.save(task);
         activityRepo.log(null, task.getGroupId(), "TASK_CREATED", "Task: " + task.getTitle());
+        notificationHandler.broadcastNewTask(task);
     }
 
     @PatchMapping("/{taskId}/status")
